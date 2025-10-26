@@ -2,7 +2,7 @@
 .dash {
 
   padding: 20px 24px;
-  background: linear-gradient(to bottom, var(--bg), #ffffff);
+  background: #fff
 }
 
 /* ===== Greeting ===== */
@@ -28,7 +28,8 @@
   font-weight: 800;
   color: var(--text);
 }
-.wave { display: inline-block; }
+.wave { 
+  display: inline-block; }
 
 .dash__subtitle {
   font-weight: 500;
