@@ -5,6 +5,7 @@ import Signup from "./Pages/Signup/Signup";
 import Dashboard from "./Pages/Dashboard/Dashboard";
 import Navbar from "./components/Navbar/Navbar";
 import Academic from "./Pages/Academic/Academic";
+import PersonalInfo from "./Pages/PersonalInfo/PersonalInfo";
 
 export default function App() {
   return (
@@ -19,7 +20,7 @@ export default function App() {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="academic" element={<Academic />} />
-          {/* <Route path="personal-info" element={<PersonalInfo />} /> */}
+          <Route path="personal-info" element={<PersonalInfo />} />
           {/* <Route path="encryption-key" element={<EncryptionKey />} /> */}
         </Route>
 
