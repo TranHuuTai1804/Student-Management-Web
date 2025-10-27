@@ -1,0 +1,576 @@
+IF DB_ID('QLSV_AT') IS NOT NULL
+BEGIN
+ALTER DATABASE QLSV_AT SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE QLSV_AT;
+END
+GO
+CREATE DATABASE QLSV_AT;
+GO
+USE QLSV_AT;
+GO
+
+-- =========================
+-- Cài đặt cơ sở dữ liệu cơ bản
+-- =========================
+
+-- Bảng KHOA
+CREATE TABLE KHOA (
+MAKHOA CHAR(5) PRIMARY KEY,
+TENKHOA NVARCHAR(100) NOT NULL
+);
+
+
+-- Bảng LOP
+CREATE TABLE LOP (
+MALOP CHAR(10) PRIMARY KEY,
+TENLOP NVARCHAR(100) NOT NULL,
+MAKHOA CHAR(5) NOT NULL,
+CONSTRAINT FK_LOP_KHOA FOREIGN KEY (MAKHOA) REFERENCES KHOA(MAKHOA)
+);
+
+
+-- Bảng SINHVIEN
+CREATE TABLE SINH_VIEN (
+    MaSV CHAR(10) PRIMARY KEY,
+    HoTen NVARCHAR(100),
+    NgaySinh DATE,
+    GioiTinh NVARCHAR(3),
+    MaLop CHAR(10),
+    Email VARCHAR(100),
+    CONSTRAINT FK_SV_LOP FOREIGN KEY (MALOP) REFERENCES LOP(MALOP)
+);
+
+-- Bảng GIANGVIEN
+CREATE TABLE GIANG_VIEN (
+    MaGV CHAR(10) PRIMARY KEY,
+    HoTen NVARCHAR(100),
+    MAKHOA CHAR(5) NOT NULL,
+    Email VARCHAR(100),
+    CONSTRAINT FK_GV_KHOA FOREIGN KEY (MAKHOA) REFERENCES KHOA(MAKHOA)
+);
+-- Bảng PING (mã ping cấp cho SV để xem điểm)
+CREATE TABLE PING (
+MASV CHAR(10) PRIMARY KEY,
+PING_KEY NVARCHAR(255) NOT NULL,
+CREATED_AT DATETIME2 DEFAULT SYSUTCDATETIME()
+);
+
+CREATE TABLE HOC_PHAN (
+    MAHP CHAR(10) PRIMARY KEY,            
+    TenHP NVARCHAR(100) NOT NULL,         
+    SoTinChi INT CHECK (SoTinChi > 0),    
+    HocKy INT CHECK (HocKy BETWEEN 1 AND 3), 
+    NamHoc CHAR(9),                       
+    MaLop CHAR(10) REFERENCES LOP(MaLop), 
+    GiangVien NVARCHAR(100),              
+    NgayBatDau DATE,                      
+    NgayKetThuc DATE                      
+);
+
+-- Bảng DIEM 
+CREATE TABLE DIEM (
+MASV CHAR(10) NOT NULL,
+MAHP CHAR(10) NOT NULL,
+DIEM_MAHOA NVARCHAR(400) NOT NULL,
+CREATED_AT DATETIME2 DEFAULT SYSUTCDATETIME(),
+CREATED_BY NVARCHAR(100) NULL,
+PRIMARY KEY (MASV, MAHP),
+CONSTRAINT FK_DIEM_SV FOREIGN KEY (MASV) REFERENCES SINH_VIEN(MASV),
+CONSTRAINT FK_HO FOREIGN KEY (MAHP) REFERENCES HOC_PHAN(MAHP)
+);
+
+
+-- Bảng Tài khoản
+CREATE TABLE TAIKHOAN (
+USERNAME NVARCHAR(50) PRIMARY KEY,
+PASSWORD_HASH NVARCHAR(255) NOT NULL,
+ROLE NVARCHAR(20) NOT NULL,
+Email VARCHAR(100),
+RELATED_ID NVARCHAR(20) NULL -- có thể lưu MASV hoặc MAGV nếu cần mapping
+);
+
+-- Dữ liệu mẫu
+INSERT INTO KHOA (MAKHOA, TENKHOA) VALUES
+('K001','Công nghệ thông tin'),
+('K002','Toán - Tin'),
+('K003','Kinh tế');
+
+
+INSERT INTO LOP (MALOP, TENLOP, MAKHOA) VALUES
+('L001','CTK42','K001'),
+('L002','CTK43','K001'),
+('L003','KT01','K002');
+
+
+INSERT INTO SINH_VIEN (MaSV, HoTen, MaLop) VALUES
+('SV001','Nguyễn Văn A','L001'),
+('SV002','Trần Thị B','L001'),
+('SV003','Lê Văn C','L002'),
+('SV004','Phạm Thị D','L003'),
+('SV005','Hoàng Văn E','L002');
+
+
+INSERT INTO GIANG_VIEN (MaGV, HoTen, MAKHOA) VALUES
+('GV001','TS. Mai Anh','K001'),
+('GV002','ThS. Phan Long','K002');
+
+
+-- Tài khoản mẫu (mật khẩu giả đã băm bằng SHA256 - replace bằng hash thật khi deploy)
+INSERT INTO TAIKHOAN (USERNAME, PASSWORD_HASH, ROLE, RELATED_ID) VALUES
+('admin','FAKEHASH_ADMIN','ADMIN',NULL),
+('gv_maianh','FAKEHASH_GV1','GIANGVIEN','GV001'),
+('sv_nguyena','FAKEHASH_SV1','SINHVIEN','SV001');
+
+
+-- PING mẫu 
+INSERT INTO PING (MASV, PING_KEY) VALUES
+('SV001','PING-SV001-ABC'),
+('SV002','PING-SV002-ABC'),
+('SV003','PING-SV003-ABC'),
+('SV004','PING-SV004-ABC'),
+('SV005','PING-SV005-ABC');
+
+--Học Phần mẫu
+INSERT INTO HOC_PHAN (MAHP, TenHP, SoTinChi, HocKy, NamHoc, MaLop, GiangVien, NgayBatDau, NgayKetThuc) VALUES
+('HP004', N'Lập trình Java', 3, 1, '2025-2026', 'L003', N'Nguyễn Văn C', '2025-09-01', '2025-12-20'),
+('HP001', N'Lập trình C#', 3, 1, '2025-2026', 'L001', N'Nguyễn Văn A', '2025-09-01', '2025-12-20'),
+('HP002', N'Lập trình Java', 3, 1, '2025-2026', 'L002', N'Nguyễn Văn C', '2025-09-01', '2025-12-20');
+
+-- DIEM mẫu: Lưu giá trị mã hóa giả (Java sẽ tạo các chuỗi mã hóa thực tế)
+-- Ở đây lưu placeholder để demo. Thực tế: Java gọi sp_ThemDiem_MaHoa với DIEM_MAHOA là output của CRT.
+INSERT INTO DIEM (MASV, MAHP, DIEM_MAHOA, CREATED_BY) VALUES
+('SV001','HP001','ENCRYPTED_CRT_SV001_HP001','GV001'),
+('SV002','HP002','ENCRYPTED_CRT_SV002_HP001','GV001');
+GO
+
+-- =========================
+-- STORED PROCEDURES QUẢN LÝ SINH VIÊN
+-- =========================
+IF OBJECT_ID('sp_ThemSinhVien','P') IS NOT NULL DROP PROCEDURE sp_ThemSinhVien;
+GO
+CREATE PROCEDURE sp_ThemSinhVien
+@MASV CHAR(10),
+@HOTEN NVARCHAR(100),
+@MALOP CHAR(10)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF EXISTS (SELECT 1 FROM SINH_VIEN WHERE MaSV = @MASV)
+RAISERROR('Mã sinh viên đã tồn tại.',16,1);
+ELSE
+INSERT INTO SINH_VIEN (MaSV, HoTen, MaLop) VALUES (@MASV, @HOTEN, @MALOP);
+END;
+GO
+
+
+IF OBJECT_ID('sp_SuaSinhVien','P') IS NOT NULL DROP PROCEDURE sp_SuaSinhVien;
+GO
+CREATE PROCEDURE sp_SuaSinhVien
+@MASV CHAR(10),
+@HOTEN NVARCHAR(100),
+@MALOP CHAR(10)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF NOT EXISTS (SELECT 1 FROM SINH_VIEN WHERE MaSV = @MASV)
+RAISERROR('Không tìm thấy sinh viên.',16,1);
+ELSE
+UPDATE SINH_VIEN SET HoTen = @HOTEN, MaLop = @MALOP WHERE MaSV = @MASV;
+END;
+GO
+
+
+IF OBJECT_ID('sp_XoaSinhVien','P') IS NOT NULL DROP PROCEDURE sp_XoaSinhVien;
+GO
+CREATE PROCEDURE sp_XoaSinhVien
+@MASV CHAR(10)
+AS
+BEGIN
+SET NOCOUNT ON;
+DELETE FROM DIEM WHERE MaSV = @MASV;
+DELETE FROM PING WHERE MaSV = @MASV;
+DELETE FROM SINH_VIEN WHERE MaSV = @MASV;
+END;
+GO
+
+
+-- =========================
+-- STORED PROCEDURES QUẢN LÝ LỚP
+-- =========================
+IF OBJECT_ID('sp_ThemLop','P') IS NOT NULL DROP PROCEDURE sp_ThemLop;
+GO
+CREATE PROCEDURE sp_ThemLop
+@MALOP CHAR(10),
+@TENLOP NVARCHAR(100),
+@MAKHOA CHAR(5)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF EXISTS (SELECT 1 FROM LOP WHERE MALOP = @MALOP)
+RAISERROR('Mã lớp đã tồn tại.',16,1);
+ELSE
+INSERT INTO LOP (MALOP, TENLOP, MAKHOA) VALUES (@MALOP, @TENLOP, @MAKHOA);
+END;
+GO
+
+
+IF OBJECT_ID('sp_SuaLop','P') IS NOT NULL DROP PROCEDURE sp_SuaLop;
+GO
+CREATE PROCEDURE sp_SuaLop
+@MALOP CHAR(10),
+@TENLOP NVARCHAR(100),
+@MAKHOA CHAR(5)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF NOT EXISTS (SELECT 1 FROM LOP WHERE MALOP = @MALOP)
+RAISERROR('Không tìm thấy lớp.',16,1);
+ELSE
+UPDATE LOP SET TENLOP = @TENLOP, MAKHOA = @MAKHOA WHERE MALOP = @MALOP;
+END;
+GO
+
+
+IF OBJECT_ID('sp_XoaLop','P') IS NOT NULL DROP PROCEDURE sp_XoaLop;
+GO
+CREATE PROCEDURE sp_XoaLop
+@MALOP CHAR(10)
+AS
+BEGIN
+SET NOCOUNT ON;
+DELETE FROM SINH_VIEN WHERE MaLOP = @MALOP;
+DELETE FROM LOP WHERE MALOP = @MALOP;
+END;
+GO
+
+
+-- =========================
+-- STORED PROCEDURES QUẢN LÝ GIẢNG VIÊN
+-- =========================
+IF OBJECT_ID('sp_ThemGiangVien','P') IS NOT NULL DROP PROCEDURE sp_ThemGiangVien;
+GO
+CREATE PROCEDURE sp_ThemGiangVien
+@MAGV CHAR(10),
+@HOTEN NVARCHAR(100),
+@MAKHOA CHAR(5)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF EXISTS (SELECT 1 FROM GIANG_VIEN WHERE MaGV = @MAGV)
+RAISERROR('Mã giảng viên đã tồn tại.',16,1);
+ELSE
+INSERT INTO GIANG_VIEN (MaGV, HoTen, MAKHOA) VALUES (@MAGV, @HOTEN, @MAKHOA);
+END;
+GO
+
+
+IF OBJECT_ID('sp_SuaGiangVien','P') IS NOT NULL DROP PROCEDURE sp_SuaGiangVien;
+GO
+CREATE PROCEDURE sp_SuaGiangVien
+@MAGV CHAR(10),
+@HOTEN NVARCHAR(100),
+@MAKHOA CHAR(5)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF NOT EXISTS (SELECT 1 FROM GIANG_VIEN WHERE MaGV = @MAGV)
+RAISERROR('Không tìm thấy giảng viên.',16,1);
+ELSE
+UPDATE GIANG_VIEN SET HoTen = @HOTEN, MAKHOA = @MAKHOA WHERE MaGV = @MAGV;
+END;
+GO
+
+
+IF OBJECT_ID('sp_XoaGiangVien','P') IS NOT NULL DROP PROCEDURE sp_XoaGiangVien;
+GO
+CREATE PROCEDURE sp_XoaGiangVien
+@MAGV CHAR(10)
+AS
+BEGIN
+SET NOCOUNT ON;
+DELETE FROM TAIKHOAN WHERE RELATED_ID = @MAGV;
+DELETE FROM GIANG_VIEN WHERE MaGV = @MAGV;
+END;
+GO
+
+-- =========================
+-- STORED PROCEDURES QUẢN LÝ KHOA
+-- =========================
+IF OBJECT_ID('sp_ThemKhoa','P') IS NOT NULL DROP PROCEDURE sp_ThemKhoa;
+GO
+CREATE PROCEDURE sp_ThemKhoa
+@MAKHOA CHAR(5),
+@TENKHOA NVARCHAR(100)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF EXISTS (SELECT 1 FROM KHOA WHERE MAKHOA = @MAKHOA)
+RAISERROR('Mã khoa đã tồn tại.',16,1);
+ELSE
+INSERT INTO KHOA (MAKHOA, TENKHOA) VALUES (@MAKHOA, @TENKHOA);
+END;
+GO
+
+
+IF OBJECT_ID('sp_SuaKhoa','P') IS NOT NULL DROP PROCEDURE sp_SuaKhoa;
+GO
+CREATE PROCEDURE sp_SuaKhoa
+@MAKHOA CHAR(5),
+@TENKHOA NVARCHAR(100)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF NOT EXISTS (SELECT 1 FROM KHOA WHERE MAKHOA = @MAKHOA)
+RAISERROR('Không tìm thấy khoa.',16,1);
+ELSE
+UPDATE KHOA SET TENKHOA = @TENKHOA WHERE MAKHOA = @MAKHOA;
+END;
+GO
+
+
+IF OBJECT_ID('sp_XoaKhoa','P') IS NOT NULL DROP PROCEDURE sp_XoaKhoa;
+GO
+CREATE PROCEDURE sp_XoaKhoa
+@MAKHOA CHAR(5)
+AS
+BEGIN
+SET NOCOUNT ON;
+DELETE FROM GIANG_VIEN WHERE MAKHOA = @MAKHOA;
+DELETE FROM LOP WHERE MAKHOA = @MAKHOA;
+DELETE FROM KHOA WHERE MAKHOA = @MAKHOA;
+END;
+GO
+
+
+-- =========================
+-- STORED PROCEDURES QUẢN LÝ TÀI KHOẢN
+-- =========================
+IF OBJECT_ID('sp_ThemTaiKhoan','P') IS NOT NULL DROP PROCEDURE sp_ThemTaiKhoan;
+GO
+CREATE PROCEDURE sp_ThemTaiKhoan
+@USERNAME NVARCHAR(50),
+@PASSWORD_HASH NVARCHAR(255),
+@ROLE NVARCHAR(20),
+@RELATED_ID NVARCHAR(20)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF EXISTS (SELECT 1 FROM TAIKHOAN WHERE USERNAME = @USERNAME)
+RAISERROR('Tài khoản đã tồn tại.',16,1);
+ELSE
+INSERT INTO TAIKHOAN (USERNAME, PASSWORD_HASH, ROLE, RELATED_ID)
+VALUES (@USERNAME, @PASSWORD_HASH, @ROLE, @RELATED_ID);
+END;
+GO
+
+
+IF OBJECT_ID('sp_SuaTaiKhoan','P') IS NOT NULL DROP PROCEDURE sp_SuaTaiKhoan;
+GO
+CREATE PROCEDURE sp_SuaTaiKhoan
+@USERNAME NVARCHAR(50),
+@PASSWORD_HASH NVARCHAR(255),
+@ROLE NVARCHAR(20),
+@RELATED_ID NVARCHAR(20)
+AS
+BEGIN
+SET NOCOUNT ON;
+IF NOT EXISTS (SELECT 1 FROM TAIKHOAN WHERE USERNAME = @USERNAME)
+RAISERROR('Không tìm thấy tài khoản.',16,1);
+ELSE
+UPDATE TAIKHOAN SET PASSWORD_HASH = @PASSWORD_HASH, ROLE = @ROLE, RELATED_ID = @RELATED_ID
+WHERE USERNAME = @USERNAME;
+END;
+GO
+
+
+IF OBJECT_ID('sp_XoaTaiKhoan','P') IS NOT NULL DROP PROCEDURE sp_XoaTaiKhoan;
+GO
+CREATE PROCEDURE sp_XoaTaiKhoan
+@USERNAME NVARCHAR(50)
+AS
+BEGIN
+SET NOCOUNT ON;
+DELETE FROM TAIKHOAN WHERE USERNAME = @USERNAME;
+END;
+GO
+
+-- =========================
+-- Procedure Học Phần
+-- =========================
+CREATE PROCEDURE sp_ThemHocPhan
+    @MaHP CHAR(10),
+    @TenHP NVARCHAR(100),
+    @SoTinChi INT,
+    @HocKy INT,
+    @NamHoc CHAR(9),
+    @MaLop CHAR(10),
+    @GiangVien NVARCHAR(100),
+    @NgayBatDau DATE,
+    @NgayKetThuc DATE
+AS
+BEGIN
+    IF EXISTS (SELECT 1 FROM HOC_PHAN WHERE MaHP = @MaHP)
+    BEGIN
+        PRINT N'Mã học phần đã tồn tại!';
+        RETURN;
+    END
+
+    INSERT INTO HOC_PHAN (MaHP, TenHP, SoTinChi, HocKy, NamHoc, MaLop, GiangVien, NgayBatDau, NgayKetThuc)
+    VALUES (@MaHP, @TenHP, @SoTinChi, @HocKy, @NamHoc, @MaLop, @GiangVien, @NgayBatDau, @NgayKetThuc);
+END;
+go
+CREATE PROCEDURE sp_SuaHocPhan
+    @MaHP CHAR(10),
+    @TenHP NVARCHAR(100),
+    @SoTinChi INT,
+    @HocKy INT,
+    @NamHoc CHAR(9),
+    @MaLop CHAR(10),
+    @GiangVien NVARCHAR(100),
+    @NgayBatDau DATE,
+    @NgayKetThuc DATE
+AS
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM HOC_PHAN WHERE MaHP = @MaHP)
+    BEGIN
+        PRINT N'Không tìm thấy học phần!';
+        RETURN;
+    END
+
+    UPDATE HOC_PHAN
+    SET TenHP = @TenHP,
+        SoTinChi = @SoTinChi,
+        HocKy = @HocKy,
+        NamHoc = @NamHoc,
+        MaLop = @MaLop,
+        GiangVien = @GiangVien,
+        NgayBatDau = @NgayBatDau,
+        NgayKetThuc = @NgayKetThuc
+    WHERE MaHP = @MaHP;
+END;
+go
+CREATE PROCEDURE sp_XoaHocPhan
+    @MaHP CHAR(10)
+AS
+BEGIN
+    -- Kiểm tra tồn tại
+    IF NOT EXISTS (SELECT 1 FROM HOC_PHAN WHERE MaHP = @MaHP)
+    BEGIN
+        PRINT N'Học phần không tồn tại!';
+        RETURN;
+    END
+
+    -- Kiểm tra xem học phần có đang được sử dụng trong DIEM không
+    IF EXISTS (SELECT 1 FROM DIEM WHERE MaHP = @MaHP)
+    BEGIN
+        PRINT N'Không thể xóa học phần vì đã có điểm được nhập!';
+        RETURN;
+    END
+
+    DELETE FROM HOC_PHAN WHERE MaHP = @MaHP;
+    PRINT N'Đã xóa học phần thành công!';
+END;
+go
+CREATE PROCEDURE sp_XemDanhSachHocPhan
+AS
+BEGIN
+    SELECT * FROM HOC_PHAN ORDER BY NamHoc, HocKy, TenHP;
+END;
+go
+CREATE PROCEDURE sp_TimKiemHocPhan
+    @TuKhoa NVARCHAR(100)
+AS
+BEGIN
+    SELECT * FROM HOC_PHAN
+    WHERE TenHP LIKE N'%' + @TuKhoa + '%'
+       OR MaHP LIKE '%' + @TuKhoa + '%'
+       OR GiangVien LIKE N'%' + @TuKhoa + '%';
+END;
+go
+CREATE FUNCTION fn_TongTinChiSinhVien (@MaSV CHAR(10))
+RETURNS INT
+AS
+BEGIN
+    DECLARE @TongTC INT;
+    SELECT @TongTC = SUM(HP.SoTinChi)
+    FROM DIEM D
+    JOIN HOC_PHAN HP ON D.MaHP = HP.MaHP
+    WHERE D.MaSV = @MaSV;
+
+    RETURN ISNULL(@TongTC, 0);
+END;
+-- =========================
+-- Test
+-- =========================
+go
+EXEC sp_ThemSinhVien 
+    @MASV = 'SV006',
+    @HOTEN = N'Ngô Thanh H',
+    @MALOP = 'L001';
+go
+EXEC sp_SuaSinhVien 
+    @MASV = 'SV006',
+    @HOTEN = N'Ngô Thanh Hải',
+    @MALOP = 'L002';
+go
+EXEC sp_XoaSinhVien 
+    @MASV = 'SV006';
+go
+EXEC sp_ThemLop 
+    @MALOP = 'L004',
+    @TENLOP = N'CTK44',
+    @MAKHOA = 'K001';
+go
+EXEC sp_SuaLop 
+    @MALOP = 'L004',
+    @TENLOP = N'Công nghệ phần mềm 44',
+    @MAKHOA = 'K001';
+go
+EXEC sp_XoaLop 
+    @MALOP = 'L004';
+go
+EXEC sp_ThemGiangVien 
+    @MAGV = 'GV003',
+    @HOTEN = N'ThS. Nguyễn Minh',
+    @MAKHOA = 'K001';
+go
+EXEC sp_SuaGiangVien 
+    @MAGV = 'GV003',
+    @HOTEN = N'TS. Nguyễn Minh Quân',
+    @MAKHOA = 'K002';
+go
+EXEC sp_XoaGiangVien 
+    @MAGV = 'GV003';
+go
+EXEC sp_ThemKhoa 
+    @MAKHOA = 'K004',
+    @TENKHOA = N'Ngôn ngữ Anh';
+go
+EXEC sp_SuaKhoa 
+    @MAKHOA = 'K004',
+    @TENKHOA = N'Ngôn ngữ và Dịch thuật';
+go
+EXEC sp_XoaKhoa 
+    @MAKHOA = 'K004';
+go
+EXEC sp_ThemTaiKhoan 
+    @USERNAME = 'sv_tranb',
+    @PASSWORD_HASH = 'HASHEDPASSWORD123',
+    @ROLE = 'SINHVIEN',
+    @RELATED_ID = 'SV002';
+go
+EXEC sp_SuaTaiKhoan 
+    @USERNAME = 'sv_tranb',
+    @PASSWORD_HASH = 'NEWHASH456',
+    @ROLE = 'SINHVIEN',
+    @RELATED_ID = 'SV002';
+go
+EXEC sp_XoaTaiKhoan 
+    @USERNAME = 'sv_tranb';
+go
+SELECT * FROM SINH_VIEN;
+SELECT * FROM LOP;
+SELECT * FROM GIANG_VIEN;
+SELECT * FROM KHOA;
+SELECT * FROM TAIKHOAN;
+
