@@ -10,6 +10,7 @@
   background: #fff
 }
 
+
 /*  Card base  */
 
 .card {
@@ -17,6 +18,10 @@
   border: 1px solid var(--border);
   border-radius: 14px;
   box-shadow: var(--shadow);
+}
+
+.first {
+  background: #eaf2ff !important;                
 }
 
 /*  HERO */

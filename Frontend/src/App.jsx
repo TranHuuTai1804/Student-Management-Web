@@ -6,6 +6,7 @@ import Dashboard from "./Pages/Dashboard/Dashboard";
 import Navbar from "./components/Navbar/Navbar";
 import Academic from "./Pages/Academic/Academic";
 import PersonalInfo from "./Pages/PersonalInfo/PersonalInfo";
+import EncryptionKey from "./Pages/MyEncryptionKey/MEK";
 
 export default function App() {
   return (
@@ -21,7 +22,7 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="academic" element={<Academic />} />
           <Route path="personal-info" element={<PersonalInfo />} />
-          {/* <Route path="encryption-key" element={<EncryptionKey />} /> */}
+          <Route path="encryption-key" element={<EncryptionKey />} />
         </Route>
 
         {/* fallback */}

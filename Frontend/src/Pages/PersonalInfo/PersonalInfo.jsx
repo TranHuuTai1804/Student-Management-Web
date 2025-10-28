@@ -1,9 +1,5 @@
 import React from "react";
 import "./PersonalInfo.css";
-import Class from '../../assets/icon/class.png'
-import Student from '../../assets/icon/student.png'
-import Id from '../../assets/icon/id.png'
-import Scur from "../../assets/icon/scurity.png"
 
 function PersonalInfo() {
   // mock data (sau này thay bằng API)

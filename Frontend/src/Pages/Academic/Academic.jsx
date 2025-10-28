@@ -59,7 +59,7 @@ function Academic() {
 
   return (
     <div className="acad">
-      <section className="acad__hero card">
+      <section className="acad__hero card first">
         <div className="hero__left">
           <div className="hero__content">
             <img src={Student} alt="" className="hero__icon" />
