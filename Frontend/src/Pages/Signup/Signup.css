@@ -133,3 +133,124 @@
 .link:hover {
     text-decoration: underline;
 }
+
+
+
+
+@media (max-width: 768px) {
+  .auth {
+    padding: 18px;
+    padding-left: max(18px, env(safe-area-inset-left));
+    padding-right: max(18px, env(safe-area-inset-right));
+    padding-top: max(18px, env(safe-area-inset-top));
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+  }
+
+  .auth__card {
+    max-width: 92vw;
+    padding: 18px 20px 16px;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(2, 8, 23, 0.05);
+  }
+
+  .auth__brand { gap: 8px; }
+  .brand-icon { width: 30px; height: 30px; }
+  .brand-name { font-size: 16.5px; }
+
+  .auth__title {
+    margin-top: 22px;
+    margin-bottom: 22px;
+    font-size: 24px;
+    line-height: 1.15;
+  }
+
+  .auth__alert { font-size: 13px; padding: 9px 10px; }
+
+  .auth__form {
+    padding: 0 14px;
+    gap: 16px;
+  }
+
+  .field { gap: 5px; }
+  .field__label { font-size: 12px; }
+  .field__input {
+    height: 40px;
+    border-radius: 10px;
+    padding: 0 11px;
+    font-size: 13.5px;
+  }
+  .field__input:focus {
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0.14);
+  }
+
+  .btn {
+    height: 44px;
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  .auth__footer {
+    margin-top: 28px;
+    margin-bottom: 28px;
+    gap: 6px;
+    font-size: 13px;
+    flex-wrap: wrap;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth { padding: 14px; }
+  .auth__card {
+    max-width: 96vw;
+    padding: 16px 14px 14px;
+    border-radius: 12px;
+  }
+
+  .brand-icon { width: 28px; height: 28px; }
+  .brand-name { font-size: 15.5px; }
+
+  .auth__title {
+    margin-top: 18px;
+    margin-bottom: 18px;
+    font-size: 22px;
+  }
+
+  .auth__alert { font-size: 12.5px; }
+
+  .auth__form {
+    padding: 0 8px;
+    gap: 14px;
+  }
+
+  .field__label { font-size: 11.5px; }
+  .field__input {
+    height: 38px;
+    font-size: 13px;
+    padding: 0 10px;
+    border-radius: 10px;
+  }
+
+  .btn {
+    height: 42px;
+    font-size: 13.5px;
+    border-radius: 10px;
+  }
+
+  .auth__footer {
+    margin-top: 22px;
+    margin-bottom: 22px;
+    font-size: 12.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn { transition: none; }
+  .field__input:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16); }
+}
+
+
+
+
+
+
