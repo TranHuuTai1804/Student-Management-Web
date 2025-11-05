@@ -7,23 +7,26 @@ import { errorHandler, notFound } from "./middleware/error.middleware.js";
 
 const app = express();
 
-// 🟢 Đặt CORS TRƯỚC cookieParser và routes
+// 🟢 CORS cần bật credentials + origin chính xác
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: clientOrigin || "http://localhost:5173",
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+// KHÔNG cần app.options('*', cors()) trên Express 5
 
+// 🟢 Đảm bảo parse JSON + cookie
 app.use(express.json());
 app.use(cookieParser());
 
 // Routes
 app.use("/", routes);
 
-// Error handlers
+// 🧩 404 + error handler
 app.use(notFound);
 app.use(errorHandler);
 
